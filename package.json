@@ -1,0 +1,38 @@
+{
+  "name": "velvet-roots",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@11.13.1",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@radix-ui/react-dialog": "^1.1.19",
+    "@radix-ui/react-label": "^2.1.11",
+    "@radix-ui/react-slot": "^1.3.0",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "lucide-react": "^1.24.0",
+    "next": "^16.2.10",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
+    "tailwind-merge": "^3.6.0",
+    "zustand": "^5.0.14"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.3.2",
+    "@types/node": "^26.1.1",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "autoprefixer": "^10.5.3",
+    "eslint": "^10.7.0",
+    "eslint-config-next": "^16.2.10",
+    "postcss": "^8.5.19",
+    "tailwindcss": "^4.3.2",
+    "tailwindcss-animate": "^1.0.7",
+    "typescript": "^5.9.3"
+  }
+}

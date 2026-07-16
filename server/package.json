@@ -1,0 +1,27 @@
+{
+  "name": "velvet-roots-api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@11.13.1",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.110.5",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "helmet": "^8.3.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.0",
+    "@types/node": "^26.1.1",
+    "tsx": "^4.19.2",
+    "typescript": "5.9.3"
+  }
+}
