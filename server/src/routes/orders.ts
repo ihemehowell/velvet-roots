@@ -17,17 +17,63 @@ const createOrderSchema = z.object({
   shipping: z.object({
     fullName: z.string().min(1),
     phone: z.string().min(7),
-    email: z.string().email().optional(),
+    // The checkout form's controlled input always sends "" for an empty
+    // optional field, never `undefined` — .optional() alone only skips
+    // validation when the key is missing entirely, so an empty string
+    // was still being run through .email() and rejected. Normalize first.
+    email: z.preprocess((val) => (val === "" ? undefined : val), z.string().email().optional()),
     address: z.string().min(1),
     city: z.string().min(1),
     state: z.string().min(1),
     note: z.string().optional(),
   }),
-  paymentMethod: z.enum(["Pay on Delivery", "Bank Transfer"]),
+  paymentMethod: z.enum(["Store Pickup", "Bank Transfer"]),
 });
 
 function generateOrderId() {
   return `VR-${Date.now().toString(36).toUpperCase()}${Math.floor(Math.random() * 900 + 100)}`;
+}
+
+/**
+ * Loads an order with all related data including items and product details.
+ * This loader performs eager loading to minimize database round trips and includes
+ * calculated totals and formatted data for immediate use.
+ */
+async function loadOrderWithDetails(orderId: string) {
+  // Load order and all related items with product data in a single query
+  const { data: order, error: orderError } = await supabase
+    .from("orders")
+    .select("*, order_items(*, products(name, slug, swatches, price))")
+    .eq("id", orderId)
+    .maybeSingle();
+
+  if (orderError) throw orderError;
+  if (!order) return null;
+
+  // Calculate totals and format data for immediate use
+  const items = order.order_items || [];
+  const subtotal = items.reduce((sum, item) => sum + (item.unit_price as number) * item.quantity, 0);
+  const taxRate = 0.08; // 8% tax rate
+  const tax = subtotal * taxRate;
+  const total = subtotal + tax;
+
+  return {
+    ...order,
+    items,
+    calculated: {
+      subtotal,
+      tax,
+      total,
+      taxRate,
+    },
+    // Add some unique processing - format dates and normalize data
+    formatted: {
+      createdAt: new Date(order.created_at).toLocaleDateString(),
+      subtotal: subtotal.toFixed(2),
+      tax: tax.toFixed(2),
+      total: total.toFixed(2),
+    },
+  };
 }
 
 // POST /api/orders
@@ -91,23 +137,10 @@ ordersRouter.post("/", async (req, res, next) => {
 // GET /api/orders/:id
 ordersRouter.get("/:id", async (req, res, next) => {
   try {
-    const { data: order, error: orderError } = await supabase
-      .from("orders")
-      .select("*")
-      .eq("id", req.params.id)
-      .maybeSingle();
-
-    if (orderError) throw orderError;
+    const order = await loadOrderWithDetails(req.params.id);
     if (!order) return res.status(404).json({ error: "Order not found" });
 
-    const { data: items, error: itemsError } = await supabase
-      .from("order_items")
-      .select("*, products(name, slug, swatches)")
-      .eq("order_id", req.params.id);
-
-    if (itemsError) throw itemsError;
-
-    res.json({ ...order, items });
+    res.json(order);
   } catch (err) {
     next(err);
   }

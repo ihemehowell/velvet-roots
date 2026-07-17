@@ -36,5 +36,5 @@ export interface CreateOrderInput {
     state: string;
     note?: string;
   };
-  paymentMethod: "Pay on Delivery" | "Bank Transfer";
+  paymentMethod: "Store Pickup" | "Bank Transfer";
 }

@@ -3,13 +3,14 @@
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { useCartStore } from "@/lib/store";
-import { products } from "@/lib/products";
+import { useProductsStore } from "@/lib/products-store";
 import { formatNaira } from "@/lib/utils";
 import { Minus, Plus, ShoppingBag } from "lucide-react";
 import Link from "next/link";
 
 export function CartDrawer() {
   const { lines, isOpen, close, updateQuantity } = useCartStore();
+  const { products } = useProductsStore();
 
   const items = lines
     .map((line) => {

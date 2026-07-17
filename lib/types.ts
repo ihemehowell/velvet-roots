@@ -41,7 +41,7 @@ export interface Order {
   id: string;
   lines: CartLine[];
   shipping: ShippingInfo;
-  paymentMethod: "Pay on Delivery" | "Bank Transfer";
+  paymentMethod: "Store Pickup" | "Bank Transfer";
   subtotal: number;
   createdAt: string;
 }

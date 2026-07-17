@@ -4,50 +4,52 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useCartStore } from "@/lib/store";
-import { products } from "@/lib/products";
+import { useProductsStore } from "@/lib/products-store";
+import { useOrderCreation } from "@/lib/order-loader"; // Import the new hook
 import { formatNaira, cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ShippingInfo, Order } from "@/lib/types";
-import { Truck, Banknote } from "lucide-react";
+import { Store, Banknote } from "lucide-react";
 
-const initialShipping: ShippingInfo = {
-  fullName: "",
-  phone: "",
-  email: "",
-  address: "",
-  city: "",
-  state: "",
-  note: "",
-};
+// ...existing code...
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { lines, placeOrder } = useCartStore();
+  const { lines, clear } = useCartStore(); // Use clear instead of setOrder
+  const { products } = useProductsStore();
+  const { creating, error: createError, createOrder } = useOrderCreation(); // Use the new hook
   const [shipping, setShipping] = useState<ShippingInfo>(initialShipping);
-  const [paymentMethod, setPaymentMethod] = useState<Order["paymentMethod"]>("Pay on Delivery");
+  const [paymentMethod, setPaymentMethod] = useState<Order["paymentMethod"]>("Store Pickup");
 
-  const items = lines
-    .map((line) => {
-      const product = products.find((p) => p.id === line.productId);
-      return product ? { line, product } : null;
-    })
-    .filter(Boolean) as { line: (typeof lines)[number]; product: (typeof products)[number] }[];
-
-  const subtotal = items.reduce((sum, { line, product }) => sum + product.price * line.quantity, 0);
-
-  const update = (field: keyof ShippingInfo) => (e: React.ChangeEvent<HTMLInputElement>) =>
-    setShipping((s) => ({ ...s, [field]: e.target.value }));
+  // ...existing code...
 
   const canSubmit =
-    items.length > 0 && shipping.fullName && shipping.phone && shipping.address && shipping.city && shipping.state;
+    items.length > 0 &&
+    shipping.fullName &&
+    shipping.phone &&
+    shipping.address &&
+    shipping.city &&
+    shipping.state &&
+    !creating; // Use creating from the hook
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!canSubmit) return;
-    placeOrder(shipping, paymentMethod, subtotal);
-    router.push("/order-confirmation");
+    try {
+      const response = await createOrder({
+        items: lines.map((l) => ({ productId: l.productId, swatch: l.swatch, quantity: l.quantity })),
+        shipping,
+        paymentMethod,
+      });
+      clear(); // Clear the cart after successful order
+      router.push(`/order-confirmation?orderId=${response.id}`); // Pass orderId as query param
+    } catch (err) {
+      // Error handling is now inside the hook
+    } finally {
+      // Submitting state is managed by the hook
+    }
   };
 
   if (items.length === 0) {
@@ -107,7 +109,7 @@ export default function CheckoutPage() {
               Online payment isn't set up yet — choose how you'd like to complete this order for now.
             </p>
             <div className="grid gap-3 sm:grid-cols-2">
-              {(["Pay on Delivery", "Bank Transfer"] as const).map((method) => (
+              {(["Store Pickup", "Bank Transfer"] as const).map((method) => (
                 <button
                   key={method}
                   type="button"
@@ -119,7 +121,7 @@ export default function CheckoutPage() {
                       : "border-border text-espresso/70 hover:border-espresso"
                   )}
                 >
-                  {method === "Pay on Delivery" ? <Truck className="h-5 w-5" /> : <Banknote className="h-5 w-5" />}
+                  {method === "Store Pickup" ? <Store className="h-5 w-5" /> : <Banknote className="h-5 w-5" />}
                   {method}
                 </button>
               ))}
@@ -144,8 +146,9 @@ export default function CheckoutPage() {
             <span>{formatNaira(subtotal)}</span>
           </div>
           <p className="mt-1 text-xs text-espresso/40">Delivery fees confirmed by our team after order placement.</p>
+          {createError && <p className="mt-3 text-sm text-berry">{createError}</p>}
           <Button type="submit" variant="bronze" size="lg" className="mt-6 w-full" disabled={!canSubmit}>
-            Place order
+            {creating ? "Placing order…" : "Place order"}
           </Button>
         </aside>
       </form>

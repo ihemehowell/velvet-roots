@@ -34,7 +34,7 @@ If `pnpm install` ever complains about either of these again on a fresh dependen
 - **Catalog** (`/shop`) — filterable by Hair / Cosmetics
 - **Product detail** (`/product/[slug]`) — shade/texture swatch picker, quantity, add to bag
 - **Cart** — slide-in drawer (Radix Dialog), accessible from the header on every page
-- **Checkout** (`/checkout`) — shipping form + payment method selection (Pay on Delivery / Bank Transfer — no gateway wired up yet)
+- **Checkout** (`/checkout`) — shipping form + payment method selection (Store Pickup / Bank Transfer — no gateway wired up yet)
 - **Order confirmation** (`/order-confirmation`) — order summary pulled from the last placed order
 
 ## Known gaps / next steps
@@ -43,4 +43,3 @@ If `pnpm install` ever complains about either of these again on a fresh dependen
 - No auth/account pages yet
 - No real product photography — cards use CSS gradients as placeholders by design (swap for real images per product)
 - Cart is not persisted across page refreshes (Zustand store is in-memory only) — add `persist` middleware or Supabase-backed cart when you have auth
-# velvet-roots

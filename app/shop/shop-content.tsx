@@ -1,8 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
-import { products } from "@/lib/products";
+import { useRouter } from "next/navigation";
+import { useProductsStore } from "@/lib/products-store";
 import { ProductCard } from "@/components/product-card";
 import { Category } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -17,10 +18,17 @@ export function ShopContent() {
   const searchParams = useSearchParams();
   const initial = (searchParams.get("category") as Category | null) ?? "all";
   const [active, setActive] = useState<Category | "all">(initial);
+  const router = useRouter();
+
+  useEffect(() => {
+    const param = (searchParams.get("category") as Category | null) ?? "all";
+    setActive(param);
+  }, [searchParams]);
+  const { products, status } = useProductsStore();
 
   const filtered = useMemo(
     () => (active === "all" ? products : products.filter((p) => p.category === active)),
-    [active]
+    [active, products]
   );
 
   return (
@@ -34,7 +42,12 @@ export function ShopContent() {
         {filters.map((f) => (
           <button
             key={f.value}
-            onClick={() => setActive(f.value)}
+            type="button"
+            onClick={() => {
+              setActive(f.value);
+              const url = f.value === "all" ? "/shop" : `/shop?category=${f.value}`;
+              router.push(url);
+            }}
             className={cn(
               "rounded-full border px-4 py-2 text-sm font-medium transition-colors",
               active === f.value
@@ -47,7 +60,11 @@ export function ShopContent() {
         ))}
       </div>
 
-      {filtered.length === 0 ? (
+      {status === "loading" && <p className="text-espresso/60">Loading products…</p>}
+      {status === "error" && (
+        <p className="text-berry">Couldn't load products. Is the API running at NEXT_PUBLIC_API_URL?</p>
+      )}
+      {status === "loaded" && filtered.length === 0 ? (
         <p className="text-espresso/60">No products found in this category yet.</p>
       ) : (
         <div className="grid grid-cols-2 gap-x-6 gap-y-10 md:grid-cols-4">

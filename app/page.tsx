@@ -39,7 +39,7 @@ export default function Home() {
         </div>
 
         <div className="relative">
-          <div className="aspect-square rounded-lg bg-gradient-to-br from-[#2B1B14] via-[#7A2333] to-[#B8863B]" />
+          <div className="aspect-square rounded-lg bg-linear-to-br from-espresso via-berry to-bronze" />
           <div className="absolute -bottom-6 left-1/2 w-[88%] -translate-x-1/2 rounded-md bg-ivory p-4 shadow-lg md:w-4/5">
             <p className="eyebrow mb-2">This week's shade story</p>
             <div className="flex items-center gap-3">

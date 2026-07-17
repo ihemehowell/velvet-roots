@@ -23,7 +23,7 @@ export function ProductCard({ product }: { product: Product }) {
       <Link href={`/product/${product.slug}`} className="block">
         <div
           className={cn(
-            "relative aspect-[4/5] w-full overflow-hidden rounded-md bg-gradient-to-br",
+            "relative aspect-4/5 w-full overflow-hidden rounded-md bg-linear-to-br",
             gradients[product.category]
           )}
         >

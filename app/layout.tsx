@@ -4,6 +4,8 @@ import "./globals.css";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
 import { CartDrawer } from "@/components/cart-drawer";
+import { ProductsHydrator } from "@/components/products-hydrator";
+import { CartHydrator } from "@/components/cart-hydrator";
 
 const fraunces = Fraunces({
   subsets: ["latin"],
@@ -26,6 +28,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={`${fraunces.variable} ${manrope.variable}`}>
       <body>
+        <ProductsHydrator />
+        <CartHydrator />
         <Header />
         {children}
         <Footer />

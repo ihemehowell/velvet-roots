@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { notFound, useParams } from "next/navigation";
-import { getProductBySlug, getRelated } from "@/lib/products";
+import { fetchProductBySlug } from "@/lib/api";
+import { useProductsStore, getRelated } from "@/lib/products-store";
+import { Product } from "@/lib/types";
 import { formatNaira, cn } from "@/lib/utils";
 import { ShadeSwatch } from "@/components/shade-swatch";
 import { ProductCard } from "@/components/product-card";
@@ -18,13 +20,37 @@ const gradients: Record<string, string> = {
 
 export default function ProductPage() {
   const params = useParams<{ slug: string }>();
-  const product = getProductBySlug(params.slug);
-  if (!product) return notFound();
-
-  const [selected, setSelected] = useState(product.swatches[0].name);
+  const [product, setProduct] = useState<Product | null | undefined>(undefined);
+  const [selected, setSelected] = useState<string | null>(null);
   const [qty, setQty] = useState(1);
   const addLine = useCartStore((s) => s.addLine);
-  const related = getRelated(product);
+  const { products: allProducts, load } = useProductsStore();
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  useEffect(() => {
+    let cancelled = false;
+    setProduct(undefined);
+    fetchProductBySlug(params.slug).then((p) => {
+      if (!cancelled) {
+        setProduct(p);
+        setSelected(p?.swatches[0]?.name ?? null);
+        setQty(1);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [params.slug]);
+
+  if (product === undefined) {
+    return <main className="mx-auto max-w-7xl px-5 py-24 text-center md:px-8 text-espresso/60">Loading…</main>;
+  }
+  if (product === null) return notFound();
+
+  const related = getRelated(product, allProducts);
 
   return (
     <main className="mx-auto max-w-7xl px-5 py-10 md:px-8">
@@ -59,12 +85,14 @@ export default function ProductPage() {
 
           <p className="mt-5 text-espresso/70">{product.description}</p>
 
-          <div className="mt-6">
-            <p className="mb-2 text-sm font-semibold">
-              Shade: <span className="font-normal text-espresso/60">{selected}</span>
-            </p>
-            <ShadeSwatch swatches={product.swatches} selected={selected} onSelect={setSelected} />
-          </div>
+          {selected && (
+            <div className="mt-6">
+              <p className="mb-2 text-sm font-semibold">
+                Shade: <span className="font-normal text-espresso/60">{selected}</span>
+              </p>
+              <ShadeSwatch swatches={product.swatches} selected={selected} onSelect={setSelected} />
+            </div>
+          )}
 
           <div className="mt-6 flex items-center gap-4">
             <div className="flex items-center gap-3 rounded-sm border border-border px-3 py-2">
@@ -80,7 +108,8 @@ export default function ProductPage() {
               variant="bronze"
               size="lg"
               className="flex-1"
-              onClick={() => addLine(product.id, selected, qty)}
+              disabled={!selected}
+              onClick={() => selected && addLine(product.id, selected, qty)}
             >
               Add to Bag — {formatNaira(product.price * qty)}
             </Button>
@@ -100,7 +129,7 @@ export default function ProductPage() {
               <Truck className="h-4 w-4" /> Delivery across Nigeria, 2–5 business days
             </div>
             <div className="flex items-center gap-2">
-              <ShieldCheck className="h-4 w-4" /> Pay on delivery or bank transfer
+              <ShieldCheck className="h-4 w-4" /> Store pickup or bank transfer
             </div>
           </div>
         </div>
