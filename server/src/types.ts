@@ -19,6 +19,8 @@ export interface Product {
   reviewCount: number;
 }
 
+export type OrderStatus = "pending_payment" | "proof_submitted" | "paid" | "fulfilled" | "cancelled";
+
 export interface OrderItemInput {
   productId: string;
   swatch: string;

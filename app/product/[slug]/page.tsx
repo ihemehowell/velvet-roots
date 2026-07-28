@@ -57,7 +57,7 @@ export default function ProductPage() {
       <div className="grid gap-12 md:grid-cols-2">
         <div
           className={cn(
-            "aspect-square w-full rounded-lg bg-gradient-to-br",
+            "aspect-square w-full rounded-lg bg-linear-to-br",
             gradients[product.category]
           )}
         />

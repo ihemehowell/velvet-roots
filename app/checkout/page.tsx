@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useCartStore } from "@/lib/store";
 import { useProductsStore } from "@/lib/products-store";
-import { useOrderCreation } from "@/lib/order-loader"; // Import the new hook
+import { createOrder } from "@/lib/api";
 import { formatNaira, cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,17 +13,36 @@ import { Label } from "@/components/ui/label";
 import { ShippingInfo, Order } from "@/lib/types";
 import { Store, Banknote } from "lucide-react";
 
-// ...existing code...
+const initialShipping: ShippingInfo = {
+  fullName: "",
+  phone: "",
+  email: "",
+  address: "",
+  city: "",
+  state: "",
+  note: "",
+};
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { lines, clear } = useCartStore(); // Use clear instead of setOrder
+  const { lines, setOrder } = useCartStore();
   const { products } = useProductsStore();
-  const { creating, error: createError, createOrder } = useOrderCreation(); // Use the new hook
   const [shipping, setShipping] = useState<ShippingInfo>(initialShipping);
   const [paymentMethod, setPaymentMethod] = useState<Order["paymentMethod"]>("Store Pickup");
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  // ...existing code...
+  const items = lines
+    .map((line) => {
+      const product = products.find((p) => p.id === line.productId);
+      return product ? { line, product } : null;
+    })
+    .filter(Boolean) as { line: (typeof lines)[number]; product: (typeof products)[number] }[];
+
+  const subtotal = items.reduce((sum, { line, product }) => sum + product.price * line.quantity, 0);
+
+  const update = (field: keyof ShippingInfo) => (e: React.ChangeEvent<HTMLInputElement>) =>
+    setShipping((s) => ({ ...s, [field]: e.target.value }));
 
   const canSubmit =
     items.length > 0 &&
@@ -32,23 +51,32 @@ export default function CheckoutPage() {
     shipping.address &&
     shipping.city &&
     shipping.state &&
-    !creating; // Use creating from the hook
+    !submitting;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!canSubmit) return;
+    setSubmitting(true);
+    setError(null);
     try {
       const response = await createOrder({
         items: lines.map((l) => ({ productId: l.productId, swatch: l.swatch, quantity: l.quantity })),
         shipping,
         paymentMethod,
       });
-      clear(); // Clear the cart after successful order
-      router.push(`/order-confirmation?orderId=${response.id}`); // Pass orderId as query param
+      setOrder({
+        id: response.id,
+        subtotal: response.subtotal,
+        paymentMethod: response.paymentMethod,
+        shipping: response.shipping,
+        lines,
+        createdAt: new Date().toISOString(),
+      });
+      router.push("/order-confirmation");
     } catch (err) {
-      // Error handling is now inside the hook
+      setError(err instanceof Error ? err.message : "Something went wrong placing your order.");
     } finally {
-      // Submitting state is managed by the hook
+      setSubmitting(false);
     }
   };
 
@@ -146,9 +174,9 @@ export default function CheckoutPage() {
             <span>{formatNaira(subtotal)}</span>
           </div>
           <p className="mt-1 text-xs text-espresso/40">Delivery fees confirmed by our team after order placement.</p>
-          {createError && <p className="mt-3 text-sm text-berry">{createError}</p>}
+          {error && <p className="mt-3 text-sm text-berry">{error}</p>}
           <Button type="submit" variant="bronze" size="lg" className="mt-6 w-full" disabled={!canSubmit}>
-            {creating ? "Placing order…" : "Place order"}
+            {submitting ? "Placing order…" : "Place order"}
           </Button>
         </aside>
       </form>

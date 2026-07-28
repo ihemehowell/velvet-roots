@@ -34,6 +34,22 @@ function generateOrderId() {
   return `VR-${Date.now().toString(36).toUpperCase()}${Math.floor(Math.random() * 900 + 100)}`;
 }
 
+// Shape of a row returned by the order_items join in loadOrderWithDetails.
+// Typing this explicitly avoids implicit `any` in the reduce below and
+// gives type safety anywhere `items` is used further down (e.g. `formatted`).
+type OrderItemRow = {
+  unit_price: number;
+  quantity: number;
+  product_id: string;
+  swatch: string;
+  products: {
+    name: string;
+    slug: string;
+    swatches: string[];
+    price: number;
+  } | null;
+};
+
 /**
  * Loads an order with all related data including items and product details.
  * This loader performs eager loading to minimize database round trips and includes
@@ -51,8 +67,8 @@ async function loadOrderWithDetails(orderId: string) {
   if (!order) return null;
 
   // Calculate totals and format data for immediate use
-  const items = order.order_items || [];
-  const subtotal = items.reduce((sum, item) => sum + (item.unit_price as number) * item.quantity, 0);
+  const items: OrderItemRow[] = order.order_items || [];
+  const subtotal = items.reduce((sum, item) => sum + item.unit_price * item.quantity, 0);
   const taxRate = 0.08; // 8% tax rate
   const tax = subtotal * taxRate;
   const total = subtotal + tax;
