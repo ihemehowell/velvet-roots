@@ -9,11 +9,25 @@ import { errorHandler } from "./middleware/errorHandler.js";
 const app = express();
 
 app.use(helmet());
+
+const allowedOrigins = (process.env.CORS_ORIGIN ?? "http://localhost:3000")
+  .split(",")
+  .map((o) => o.trim());
+
 app.use(
   cors({
-    origin: process.env.CORS_ORIGIN ?? "http://localhost:3000",
+    origin(origin, callback) {
+      // allow no-origin requests (curl, health checks, server-to-server)
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error(`Origin ${origin} not allowed by CORS`));
+      }
+    },
+    credentials: true,
   })
 );
+
 app.use(express.json());
 
 app.get("/health", (_req, res) => res.json({ ok: true }));
